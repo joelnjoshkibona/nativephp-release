@@ -1,0 +1,21 @@
+{
+    "name": "blutrixx/nativephp-release",
+    "description": "Builds, signs and publishes NativePHP Mobile Android releases. Must be required with --dev — the tooling never ships inside a release build.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.1"
+    },
+    "suggest": {
+        "ext-curl": "Required to upload a signed APK to the backend-upload mode.",
+        "ext-posix": "Enables the interactive changelog prompt."
+    },
+    "autoload": {
+        "psr-4": {
+            "Blutrixx\\NativeRelease\\": "src/"
+        }
+    },
+    "bin": [
+        "bin/native-release"
+    ]
+}
