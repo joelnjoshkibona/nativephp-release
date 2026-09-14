@@ -487,7 +487,8 @@ class NativePHPDeployment
             return false;
         }
 
-        $tmpFile = tempnam(sys_get_temp_dir(), 'deploy-changelog-') . '.txt';
+        $tmpBase = tempnam(sys_get_temp_dir(), 'deploy-changelog-');
+        $tmpFile = $tmpBase . '.txt';
         file_put_contents($tmpFile, implode("\n", [
             '',
             '# Changelog for this release -- one entry per line, saved and closed to continue.',
@@ -516,6 +517,7 @@ class NativePHPDeployment
 
         $content = file_get_contents($tmpFile);
         @unlink($tmpFile);
+        @unlink($tmpBase);
 
         if ($exitCode !== 0) {
             $this->printError("Editor exited with an error (code {$exitCode}) -- aborting release.");
@@ -1107,7 +1109,9 @@ class NativePHPDeployment
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => $fields,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 120,
+            CURLOPT_TIMEOUT           => 0,
+            CURLOPT_LOW_SPEED_LIMIT   => 1024,
+            CURLOPT_LOW_SPEED_TIME    => 60,
             CURLOPT_HTTPHEADER     => [
                 'Authorization: Bearer ' . $this->backendToken,
                 'Accept: application/json',
