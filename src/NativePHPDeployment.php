@@ -940,9 +940,9 @@ class NativePHPDeployment
      * standard _method-spoofing convention — the same technique
      * MobileReleasesEditForm.vue already uses for this exact endpoint) if it
      * does. Chosen over SSH/rsync so releases can be hosted with no SSH
-     * server required. Requires a Sanctum bearer token for a user with both
-     * the MobileReleases.create AND MobileReleases.edit permissions
-     * (generate one via `php artisan tinker` on the BACKEND:
+     * server required. Requires a Sanctum bearer token for a user with the
+     * MobileReleases.list, .create AND .edit permissions (generate one via
+     * `php artisan tinker` on the BACKEND:
      * $user->createToken('mobile-deploy')->plainTextToken).
      *
      * The create-or-replace check exists so a release caught bad within
@@ -971,7 +971,7 @@ class NativePHPDeployment
         }
 
         if (!$this->backendToken) {
-            $this->printError("No backendToken configured — required to authenticate against BACKEND's MobileReleases.create/.edit endpoints.");
+            $this->printError("No backendToken configured — required to authenticate against BACKEND's MobileReleases.list/.create/.edit endpoints.");
             return false;
         }
 
@@ -1040,7 +1040,7 @@ class NativePHPDeployment
     /**
      * Looks up an existing MobileReleases row by exact version string via the
      * standard generated list endpoint's filter support (GET
-     * .../mobile-releases/list?filter[version]=X.Y.Z) — returns its uuid, or
+     * .../mobile-releases/list?filters[version]=X.Y.Z) — returns its uuid, or
      * null if no release with this version exists yet (including on any
      * lookup failure, which deliberately falls back to "create": the safer
      * of the two wrong guesses is a rejected duplicate-version error, not a
@@ -1050,7 +1050,7 @@ class NativePHPDeployment
     private function findExistingReleaseUuid(string $version): ?string
     {
         $url = rtrim($this->backendUrl, '/') . '/api/mobile-releases/list?' . http_build_query([
-            'filter' => ['version' => $version],
+            'filters' => ['version' => $version],
         ]);
 
         $ch = curl_init($url);
@@ -1066,6 +1066,7 @@ class NativePHPDeployment
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
         if ($response === false || $httpCode !== 200) {
+            $this->printWarning("Release lookup failed (HTTP {$httpCode}) — treating v{$version} as new. The token needs MobileReleases.list as well as .create and .edit.");
             return null;
         }
 
@@ -1246,8 +1247,8 @@ class NativePHPDeployment
         echo "\nDeploy target:\n";
         echo "  SSH/rsync (default) — set remoteHost/remoteUser/remoteBaseDir/baseUrl.\n";
         echo "  BACKEND upload (opt-in, no SSH) — set backendUrl + backendToken (a\n";
-        echo "  Sanctum token with MobileReleases.create) to POST the built APK to a\n";
-        echo "  BACKEND's MobileReleases API instead — for LAN hosting.\n";
+        echo "  Sanctum token with MobileReleases.list, .create and .edit) to POST the\n";
+        echo "  built APK to a BACKEND's MobileReleases API instead — for LAN hosting.\n";
         echo "\nOptions:\n";
         echo "  --version=X.X.X  Override version (default: reads from .env)\n";
         echo "  --force-clean    Run Gradle clean before building\n";
